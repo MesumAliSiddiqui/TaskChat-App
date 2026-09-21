@@ -102,8 +102,13 @@ router.post('/me/avatar', protect, async (req, res) => {
     }
 
     const relativeUrl = await saveBase64Image(imagePayload, `avatar_${req.user._id}`);
-    const host = req.get('host');
-    const fullUrl = host ? `${req.protocol}://${host}${relativeUrl}` : relativeUrl;
+
+    // Use a fixed public base URL from env instead of req.protocol/req.get('host').
+    // Behind Railway's reverse proxy, req.protocol can report 'http' even though
+    // the real public site is https, which produced http:// avatar URLs that
+    // Android silently refused to load (cleartext traffic blocked in release builds).
+    const baseUrl = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const fullUrl = `${baseUrl}${relativeUrl}`;
 
     req.user.avatar = fullUrl;
     await req.user.save();

@@ -41,6 +41,14 @@ if (corsOptions.origin === '*') {
 }
 
 const app = express();
+
+// Railway (and most PaaS) terminate HTTPS at a reverse proxy and forward
+// requests to this app over plain HTTP internally. Without this line,
+// req.protocol always reports 'http' even when the public site is https,
+// which caused avatar URLs to be saved as http:// and silently fail to
+// load on Android (cleartext traffic is blocked in release builds).
+app.set('trust proxy', 1);
+
 const server = http.createServer(app);
 const io = new Server(server, { cors: corsOptions });
 
