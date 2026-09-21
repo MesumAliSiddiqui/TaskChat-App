@@ -13,8 +13,8 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  connectionTimeout: 10000,
-  family: 4,
+  connectionTimeout: 10000, // fail fast (10s) instead of hanging for a minute
+  family: 4, // force IPv4 — Railway doesn't support outbound IPv6
 });
 
 const sendOtpEmail = async (toEmail, code) => {
