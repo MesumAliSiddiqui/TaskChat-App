@@ -7,12 +7,13 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
-  secure: true, // true for port 465, false for 587
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  connectionTimeout: 10000, // fail fast (10s) instead of hanging for a minute
+  connectionTimeout: 10000,
+  family: 4, // force IPv4 — Railway doesn't support outbound IPv6
 });
 
 const sendOtpEmail = async (toEmail, code) => {
