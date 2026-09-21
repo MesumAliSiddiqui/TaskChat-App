@@ -1,15 +1,33 @@
-const { Resend } = require('resend');
+const brevo = require('@getbrevo/brevo');
 
-// Resend sends over HTTPS (port 443), which avoids Railway's outbound
-// SMTP port blocking entirely (465/587/25 are all blocked on Railway).
+// Brevo sends over HTTPS (port 443), avoiding Railway's outbound SMTP
+// port blocking entirely. Unlike Resend, Brevo lets you verify a single
+// sender EMAIL ADDRESS (no domain purchase/DNS setup required) and still
+// send to any recipient.
 // Set these in your Railway environment variables:
-//   RESEND_API_KEY=re_xxxxxxxxxxxx
-//   EMAIL_FROM="TaskChat <onboarding@resend.dev>"  (or your verified domain)
-const resend = new Resend(process.env.RESEND_API_KEY);
+//   BREVO_API_KEY=xkeysib-xxxxxxxxxxxx
+//   EMAIL_FROM_ADDRESS=mesumalisiddiqui@gmail.com   (the address you verified in Brevo)
+//   EMAIL_FROM_NAME=TaskChat
+
+const apiInstance = new brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+
+const sendViaBrevo = async ({ to, subject, text, html }) => {
+  const sendSmtpEmail = new brevo.SendSmtpEmail();
+  sendSmtpEmail.sender = {
+    email: process.env.EMAIL_FROM_ADDRESS,
+    name: process.env.EMAIL_FROM_NAME || 'TaskChat',
+  };
+  sendSmtpEmail.to = [{ email: to }];
+  sendSmtpEmail.subject = subject;
+  sendSmtpEmail.textContent = text;
+  sendSmtpEmail.htmlContent = html;
+
+  await apiInstance.sendTransacEmail(sendSmtpEmail);
+};
 
 const sendOtpEmail = async (toEmail, code) => {
-  const { error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM,
+  await sendViaBrevo({
     to: toEmail,
     subject: 'Your TaskChat verification code',
     text: `Your verification code is ${code}. It expires in 10 minutes.`,
@@ -24,14 +42,10 @@ const sendOtpEmail = async (toEmail, code) => {
       </div>
     `,
   });
-  if (error) {
-    throw new Error(error.message || 'Failed to send email via Resend');
-  }
 };
 
 const sendPasswordResetEmail = async (toEmail, code) => {
-  const { error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM,
+  await sendViaBrevo({
     to: toEmail,
     subject: 'TaskChat Password Reset Code',
     text: `Your password reset code is ${code}. It expires in 10 minutes. If you did not request a password reset, please ignore this email.`,
@@ -46,9 +60,6 @@ const sendPasswordResetEmail = async (toEmail, code) => {
       </div>
     `,
   });
-  if (error) {
-    throw new Error(error.message || 'Failed to send email via Resend');
-  }
 };
 
 module.exports = { sendOtpEmail, sendPasswordResetEmail };
