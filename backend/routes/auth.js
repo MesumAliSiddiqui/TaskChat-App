@@ -117,6 +117,22 @@ router.post('/send-otp', strictAuthLimiter, async (req, res) => {
   }
 });
 
+// Temporary diagnostic route - remove after testing
+router.get('/debug-smtp', async (req, res) => {
+  const net = require('net');
+  const results = {};
+  const testPort = (port) => new Promise((resolve) => {
+    const socket = net.createConnection({ host: 'smtp.gmail.com', port, family: 4 });
+    const timer = setTimeout(() => { socket.destroy(); resolve('timeout'); }, 5000);
+    socket.on('connect', () => { clearTimeout(timer); socket.destroy(); resolve('success'); });
+    socket.on('error', (err) => { clearTimeout(timer); resolve('error: ' + err.message); });
+  });
+  results.port465 = await testPort(465);
+  results.port587 = await testPort(587);
+  results.port25 = await testPort(25);
+  res.json(results);
+});
+
 // @route POST /api/auth/verify-otp
 // Checks the code, and if valid, deletes it (so it can't be reused) and
 // returns success. The actual account creation still happens via /signup,

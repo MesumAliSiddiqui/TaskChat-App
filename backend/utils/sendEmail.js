@@ -6,14 +6,15 @@ const nodemailer = require('nodemailer');
 //   EMAIL_PASS=your_16_character_app_password
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false, // false for 587 — STARTTLS upgrades the connection instead
+  requireTLS: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
   connectionTimeout: 10000,
-  family: 4, // force IPv4 — Railway doesn't support outbound IPv6
+  family: 4,
 });
 
 const sendOtpEmail = async (toEmail, code) => {
