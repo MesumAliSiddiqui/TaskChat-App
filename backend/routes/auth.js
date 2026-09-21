@@ -84,7 +84,7 @@ const publicUser = (user) => ({
 const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // How long an OTP code stays valid after being sent
-const OTP_EXPIRY_MS = 30 * 1000; // 30 seconds
+const OTP_EXPIRY_MS = 60 * 1000; // 30 seconds
 
 // @route POST /api/auth/send-otp
 // Generates a 6-digit code, emails it, and stores it (overwriting any

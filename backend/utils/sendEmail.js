@@ -62,7 +62,7 @@ const sendOtpEmail = async (toEmail, code) => {
         <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #111827; margin: 20px 0;">
           ${code}
         </div>
-        <p style="color: #9CA3AF; font-size: 13px;">This code expires in 30 second. If you didn't request this, you can safely ignore this email.</p>
+        <p style="color: #9CA3AF; font-size: 13px;">This code expires in 1 minute. If you didn't request this, you can safely ignore this email.</p>
       </div>
     `,
   });
