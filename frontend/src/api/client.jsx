@@ -6,9 +6,8 @@ import {
   clearAuthTokens,
 } from '../utils/secureStorage';
 
-// IMPORTANT: replace with your machine's LAN IP when testing on a real device,
-// or 10.0.2.2 for the Android emulator talking to a backend on localhost.
-export const BASE_URL = 'http://192.168.100.95:5000';
+// Updated to point to your live Railway backend
+export const BASE_URL = 'https://taskchat-app-production.up.railway.app';
 
 const api = axios.create({ baseURL: `${BASE_URL}/api` });
 

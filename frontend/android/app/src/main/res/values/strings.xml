@@ -2,4 +2,5 @@
     <string name="app_name">ChatApp</string>
     <string name="facebook_app_id">1490669086199644</string>
     <string name="facebook_client_token">75ac9cc98ff03a85179f9199e0058899</string>
+    <string name="GOOGLE_MAPS_API_KEY" translatable="false">AIzaSyCiRhlOKsjhJDr45MTA7os_sk7pjMa4aME</string>
 </resources>
