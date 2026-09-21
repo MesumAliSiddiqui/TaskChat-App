@@ -1,29 +1,53 @@
-const brevo = require('@getbrevo/brevo');
+const https = require('https');
 
-// Brevo sends over HTTPS (port 443), avoiding Railway's outbound SMTP
-// port blocking entirely. Unlike Resend, Brevo lets you verify a single
-// sender EMAIL ADDRESS (no domain purchase/DNS setup required) and still
-// send to any recipient.
+// Calls Brevo's REST API directly over HTTPS (port 443) - no SDK needed,
+// which avoids any package version/export-shape mismatches.
+// This also avoids Railway's outbound SMTP port blocking entirely.
 // Set these in your Railway environment variables:
 //   BREVO_API_KEY=xkeysib-xxxxxxxxxxxx
-//   EMAIL_FROM_ADDRESS=mesumalisiddiqui@gmail.com   (the address you verified in Brevo)
+//   EMAIL_FROM_ADDRESS=mesumalisiddiqui@gmail.com   (your verified sender)
 //   EMAIL_FROM_NAME=TaskChat
 
-const apiInstance = new brevo.TransactionalEmailsApi();
-apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+const sendViaBrevo = ({ to, subject, text, html }) => {
+  return new Promise((resolve, reject) => {
+    const payload = JSON.stringify({
+      sender: {
+        email: process.env.EMAIL_FROM_ADDRESS,
+        name: process.env.EMAIL_FROM_NAME || 'TaskChat',
+      },
+      to: [{ email: to }],
+      subject,
+      textContent: text,
+      htmlContent: html,
+    });
 
-const sendViaBrevo = async ({ to, subject, text, html }) => {
-  const sendSmtpEmail = new brevo.SendSmtpEmail();
-  sendSmtpEmail.sender = {
-    email: process.env.EMAIL_FROM_ADDRESS,
-    name: process.env.EMAIL_FROM_NAME || 'TaskChat',
-  };
-  sendSmtpEmail.to = [{ email: to }];
-  sendSmtpEmail.subject = subject;
-  sendSmtpEmail.textContent = text;
-  sendSmtpEmail.htmlContent = html;
+    const options = {
+      hostname: 'api.brevo.com',
+      path: '/v3/smtp/email',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Length': Buffer.byteLength(payload),
+      },
+    };
 
-  await apiInstance.sendTransacEmail(sendSmtpEmail);
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', (chunk) => { body += chunk; });
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(JSON.parse(body || '{}'));
+        } else {
+          reject(new Error(`Brevo API error (${res.statusCode}): ${body}`));
+        }
+      });
+    });
+
+    req.on('error', (err) => reject(err));
+    req.write(payload);
+    req.end();
+  });
 };
 
 const sendOtpEmail = async (toEmail, code) => {
