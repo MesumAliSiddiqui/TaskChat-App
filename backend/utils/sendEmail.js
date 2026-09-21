@@ -1,25 +1,15 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-// Uses Gmail SMTP with an App Password (NOT your regular Gmail password —
-// see setup instructions for generating one). Set these in your .env:
-//   EMAIL_USER=youraddress@gmail.com
-//   EMAIL_PASS=your_16_character_app_password
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // false for 587 — STARTTLS upgrades the connection instead
-  requireTLS: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  connectionTimeout: 10000, // fail fast (10s) instead of hanging for a minute
-  family: 4, // force IPv4 — Railway doesn't support outbound IPv6
-});
+// Resend sends over HTTPS (port 443), which avoids Railway's outbound
+// SMTP port blocking entirely (465/587/25 are all blocked on Railway).
+// Set these in your Railway environment variables:
+//   RESEND_API_KEY=re_xxxxxxxxxxxx
+//   EMAIL_FROM="TaskChat <onboarding@resend.dev>"  (or your verified domain)
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendOtpEmail = async (toEmail, code) => {
-  await transporter.sendMail({
-    from: `"TaskChat" <${process.env.EMAIL_USER}>`,
+  const { error } = await resend.emails.send({
+    from: process.env.EMAIL_FROM,
     to: toEmail,
     subject: 'Your TaskChat verification code',
     text: `Your verification code is ${code}. It expires in 10 minutes.`,
@@ -34,11 +24,14 @@ const sendOtpEmail = async (toEmail, code) => {
       </div>
     `,
   });
+  if (error) {
+    throw new Error(error.message || 'Failed to send email via Resend');
+  }
 };
 
 const sendPasswordResetEmail = async (toEmail, code) => {
-  await transporter.sendMail({
-    from: `"TaskChat" <${process.env.EMAIL_USER}>`,
+  const { error } = await resend.emails.send({
+    from: process.env.EMAIL_FROM,
     to: toEmail,
     subject: 'TaskChat Password Reset Code',
     text: `Your password reset code is ${code}. It expires in 10 minutes. If you did not request a password reset, please ignore this email.`,
@@ -53,6 +46,9 @@ const sendPasswordResetEmail = async (toEmail, code) => {
       </div>
     `,
   });
+  if (error) {
+    throw new Error(error.message || 'Failed to send email via Resend');
+  }
 };
 
 module.exports = { sendOtpEmail, sendPasswordResetEmail };
