@@ -50,7 +50,16 @@ const app = express();
 app.set('trust proxy', 1);
 
 const server = http.createServer(app);
-const io = new Server(server, { cors: corsOptions });
+const io = new Server(server, {
+  cors: corsOptions,
+  // Default Socket.IO limit is 1MB per packet. Chat photos sent as base64
+  // over 'message:send' (see chatSocket.js) easily exceed that once
+  // base64's ~33% size overhead is added, which silently disconnects the
+  // client mid-send - the message never gets acknowledged (stuck on
+  // "sending") and the client's next reconnect can produce odd navigation
+  // behavior. Raise the limit to comfortably fit compressed camera photos.
+  maxHttpBufferSize: 20 * 1024 * 1024, // 20MB
+});
 
 connectDB();
 
